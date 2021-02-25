@@ -28,7 +28,6 @@ export default class MainView extends Component {
     Collections.get('users').removeListener(this);
   }
   shouldComponentUpdate(nextProps, nextState) {
-    console.log('should update');
     return true;
   }
   componentDidMount() {
@@ -43,21 +42,18 @@ export default class MainView extends Component {
             logo: Globals.window.addApiUrlIfNeeded(res.data.group_logo),
           };
           this.setState({});
-          console.log('set state with ', this.state.group);
         }
-      }
+      },
     );
   }
   render() {
-    console.log('render');
-
     var noapp = (
       <div>
         <div className="no_channel_text">
           {Languages.t(
             'scenes.app.mainview.link_expired',
             [],
-            'This public link is invalid or has expired.'
+            'This public link is invalid or has expired.',
           )}
         </div>
       </div>
@@ -67,7 +63,6 @@ export default class MainView extends Component {
     var view = (Globals.store_public_access_get_data || {}).view;
 
     var group = this.state.group;
-    console.log(this.state.group);
 
     return [
       <div className="public_header">
@@ -81,7 +76,7 @@ export default class MainView extends Component {
               {Languages.t(
                 'scenes.app.mainview.create_account',
                 [],
-                'Créez votre espace de travail gratuitement sur '
+                'Créez votre espace de travail gratuitement sur ',
               )}
             </span>
             Twake &nbsp; 👉

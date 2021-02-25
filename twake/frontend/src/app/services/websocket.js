@@ -3,6 +3,8 @@ import api from 'services/api.js';
 import Observable from 'services/observable.js';
 import SocketCluster from 'services/socketcluster/socketcluster.js';
 import CryptoJS from 'crypto-js';
+import Collections from 'services/Collections/Collections';
+import LoginService from 'services/login/login';
 
 import Globals from 'services/Globals.js';
 
@@ -26,6 +28,7 @@ class Websocket extends Observable {
 
     this.firstTime = true;
     this.last_reconnect_call = new Date();
+    this.last_reconnect_call_if_needed = new Date();
 
     Globals.window.websocketsManager = this;
     this.autobahn = SocketCluster;
@@ -53,6 +56,7 @@ class Websocket extends Observable {
     Globals.window.addEventListener(
       'focus',
       (() => {
+        this.reconnectIfNeeded(120);
         clearTimeout(this.deconnectionBlurTimeout);
         this.didFocusedLastMinute = true;
         this.window_focus = true;
@@ -109,6 +113,7 @@ class Websocket extends Observable {
         'users/alive',
         { focus: this.didFocusedLastMinute },
         () => {
+          this.reconnectIfNeeded();
           clearTimeout(this.alive_timeout);
           if (!this.alive_connected) {
             this.reconnect();
@@ -119,6 +124,29 @@ class Websocket extends Observable {
         5000,
       );
       this.didFocusedLastMinute = Globals.isReactNative || Globals.window.document.hasFocus();
+    }
+  }
+
+  reconnectIfNeeded(seconds = 60) {
+    if (new Date().getTime() - this.last_reconnect_call_if_needed.getTime() > seconds * 1000) {
+      //30 seconds
+      if (LoginService.currentUserId) {
+        Collections.get('channels').reload();
+        LoginService.updateUser();
+
+        console.log(
+          'Refresh notifications',
+          new Date().getTime() - this.last_reconnect_call_if_needed.getTime(),
+        );
+      }
+
+      if (
+        new Date().getTime() - this.last_reconnect_call_if_needed.getTime() >
+        seconds * 1000 * 30
+      ) {
+        this.reconnect();
+      }
+      this.last_reconnect_call_if_needed = new Date();
     }
   }
 

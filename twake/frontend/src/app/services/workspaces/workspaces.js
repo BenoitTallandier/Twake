@@ -13,6 +13,8 @@ import WorkspaceUserRights from './workspace_user_rights.js';
 import Notifications from 'services/user/notifications.js';
 import WindowService from 'services/utils/window.js';
 import Languages from 'services/languages/languages.js';
+import workspacesApps from 'services/workspaces/workspaces_apps.js';
+import $ from 'jquery';
 
 import Globals from 'services/Globals.js';
 
@@ -43,6 +45,10 @@ class Workspaces extends Observable {
   }
 
   initSelection(group_id) {
+    if ((Globals.store_public_access_get_data || {}).public_access_token) {
+      return;
+    }
+
     if (!Object.keys(this.user_workspaces).length) {
       this.openWelcomePage(this.welcomePage);
       return;
@@ -306,6 +312,7 @@ class Workspaces extends Observable {
           }
         }
       }
+      that.initSelection();
     });
   }
 

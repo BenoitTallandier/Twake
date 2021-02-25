@@ -19,8 +19,6 @@ class DriveFileSystem
         $this->ws = $app->getServices()->get("app.websockets");
         $this->access_manager = $app->getServices()->get("app.accessmanager");
         $this->attachementManager = new AttachementManager($this->em, $this->ws);
-
-        $this->previewableExt = Array("png", "jpeg", "jpg", "gif", "tiff", "ai", "svg", "pdf", "txt", "rtf", "csv", "docx", "doc", "odt", "xls", "xlsx", "ods", "ppt", "pptx", "odp");
     }
 
     function setDriveResumable($drive_resumable)
@@ -74,6 +72,7 @@ class DriveFileSystem
 
     public function get($options, $current_user)
     {
+        $options["id"] = $options["directory_id"];
         if (!$this->hasAccess($options, $current_user)) {
             return false;
         }
@@ -221,6 +220,7 @@ class DriveFileSystem
             $element_id = "root";
         }
 
+        $options["id"] = $element_id;
         if (!$this->hasAccess($options, $current_user)) {
             return false;
         }
@@ -746,7 +746,7 @@ class DriveFileSystem
             if (strlen($df->getPublicAccessKey()) > 10) {
                 $token = $df->getPublicAccessKey();
             } else {
-                $token = sha1(bin2hex(random_bytes(40)));
+                $token = sha1(bin2hex(random_bytes(120)));
                 $df->setPublicAccessKey($token);
             }
 

@@ -15,7 +15,7 @@ class UsersConnections extends BaseController
     {
         $time = microtime(true);
         $focus = $request->request->get("focus", true);
-        if ($this->getUser() && $focus) {
+        if ($this->getUser() && !is_string($this->getUser()) && $focus) {
             $this->get("app.user")->alive($this->getUser()->getId());
         }
         return new Response(Array("data" => "ok"));
@@ -51,6 +51,18 @@ class UsersConnections extends BaseController
                 $this->get("administration.counter")->incrementCounter("total_devices_linked", 1);
             }
 
+            $all_cookies = [];
+            foreach ($response->getCookies() as $cookie) {
+                $all_cookies[] = $cookie->asArray();
+            }
+            $data["access_token"] = [
+                "time" => date("U")+0,
+                "expiration" => date("U")+60*60*24*365,
+                "refresh_exiration" => date("U")+60*60*24*365,
+                "value" => json_encode($all_cookies),
+                "type" => "Bearer"
+            ];
+
             $data["data"]["status"] = "connected";
 
         } else {
@@ -74,7 +86,7 @@ class UsersConnections extends BaseController
 
     public function isLogged(Request $request)
     {
-        $ok = $this->getUser();
+        $ok = $this->getUser() && !is_string($this->getUser());
 
         if (!$ok) {
             $origin = $request->query->get("origin", "");
@@ -121,13 +133,13 @@ class UsersConnections extends BaseController
             "data" => Array()
         );
 
-        $ok = $this->getUser();
-        if (!$ok) {
+        $ok = $this->getUser() && !is_string($this->getUser());
+        if (!$this->getUser()) {
             $data["errors"][] = "disconnected";
         } else {
 
-            if( $this->get("app.session_handler")->getDidUseRememberMe() && $ok->getIdentityProvider()){
-              $data["errors"][] = "redirect_to_" . $ok->getIdentityProvider();
+            if( $this->get("app.session_handler")->getDidUseRememberMe() && $this->getUser()->getIdentityProvider()){
+              $data["errors"][] = "redirect_to_" . $this->getUser()->getIdentityProvider();
               return new Response($data);
             }
 
@@ -197,7 +209,7 @@ class UsersConnections extends BaseController
 
         $value = $request->request->get("value");
 
-        $ok = $this->getUser();
+        $ok = $this->getUser() && !is_string($this->getUser());
         if (!$ok) {
             $data["errors"][] = "disconnected";
         } else {

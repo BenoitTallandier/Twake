@@ -56,34 +56,39 @@ class ChannelsNotificationsSystem extends ChannelSystemAbstract
 
                 $user = $userRepo->find($member->getUserId());
 
-                if($mention_level === 1){
-                    $mention_text = "@".($all_mention?"all":"here");
-                }
-                if($mention_level === 2){
-                    $mention_text = "@".$user->getUsername(); 
-                }
+                if($user){
 
-                $member->setLastActivity(new \DateTime());
-                if($mention_text){
-                    $member->setLastQuotedMessageId("" . $message->getId());
-                }
-                
-                $channel_array = $channel->getAsArray();
-                $channel_array["_user_last_quoted_message_id"] = $member->getLastQuotedMessageId();
-                $this->pusher->push(Array("type" => "update", "notification" => Array("channel" => $channel_array)), "notifications/" . $member->getUserId());
+                    if($mention_level === 1){
+                        $mention_text = "@".($all_mention?"all":"here");
+                    }
+                    if($mention_level === 2){
+                        $mention_text = "@".$user->getUsername(); 
+                    }
 
-                //Updating workspace and group notifications
-                if (!$channel->getDirect()) {
+                    $member->setLastActivity(new \DateTime());
+                    if($mention_text){
+                        $member->setLastQuotedMessageId("" . $message->getId());
+                        $member->setLastMessagesIncrement($channel->getMessagesIncrement());
+                    }
+                    
+                    $channel_array = $channel->getAsArray();
+                    $channel_array["_user_last_quoted_message_id"] = $member->getLastQuotedMessageId();
+                    $this->pusher->push(Array("type" => "update", "notification" => Array("channel" => $channel_array)), "notifications/" . $member->getUserId());
 
-                    $this->addNotificationOnWorkspace($workspace, $user, false);
+                    //Updating workspace and group notifications
+                    if (!$channel->getDirect()) {
 
-                }
+                        $this->addNotificationOnWorkspace($workspace, $user, false);
 
-                if($mention_text){
-                    $mentions_types[$mention_text] = $mentions_types[$mention_text] ?: [];
-                    $mentions_types[$mention_text][] = $user;
-                }else{
-                  $users_to_notify[] = $user;
+                    }
+
+                    if($mention_text){
+                        $mentions_types[$mention_text] = $mentions_types[$mention_text] ?: [];
+                        $mentions_types[$mention_text][] = $user;
+                    }else{
+                    $users_to_notify[] = $user;
+                    }
+
                 }
 
             }
@@ -100,7 +105,7 @@ class ChannelsNotificationsSystem extends ChannelSystemAbstract
             $users_to_notify,
             "channel_" . $channel->getId(),
             $message_as_text,
-            $message ? $message->getId() : "",
+            $message,
             Array(),
             Array("push"),
             true
@@ -117,7 +122,7 @@ class ChannelsNotificationsSystem extends ChannelSystemAbstract
                 $users,
                 "channel_" . $channel->getId(),
                 "@".ltrim($mention_text, "@").": ".$message_as_text,
-                $message ? $message->getId() : "",
+                $message,
                 Array(),
                 Array("push"),
                 true
@@ -188,6 +193,7 @@ class ChannelsNotificationsSystem extends ChannelSystemAbstract
 
         $member->setLastMessagesIncrement($channel->getMessagesIncrement() - 1);
         $member->setLastQuotedMessageId("force_unread");
+        $member->setLastMessagesIncrement($channel->getMessagesIncrement());
 
         $array = $channel->getAsArray();
         $array["_user_last_message_increment"] = $member->getLastMessagesIncrement();
